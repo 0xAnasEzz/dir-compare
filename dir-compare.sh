@@ -101,17 +101,17 @@ run_hash() {
     export LC_ALL=C
 
     # Find & Hash pipeline:
-    # 1. '! -name . -name ".*" -prune': Prunes hidden directories/files safely without pruning '.'
+    # 1. Includes all regular files (including hidden/dot files and folders)
     # 2. Excludes out_file if within target_dir
     # 3. '2>/dev/null || true': Ignores Android scoped-storage permission errors without breaking pipefail
     # 4. 'sort -z': Deterministic sorting across different ROMs
     # 5. 'xargs -0 -r "$hash_cmd"': Computes hashes with null-termination
     if [ -n "$exclude_out" ]; then
-        (find . ! -name . -name ".*" -prune -o -path "$exclude_out" -prune -o -type f -print0 2>/dev/null || true) \
+        (find . -path "$exclude_out" -prune -o -type f -print0 2>/dev/null || true) \
             | sort -z \
             | xargs -0 -r "$hash_cmd" > "$out_file"
     else
-        (find . ! -name . -name ".*" -prune -o -type f -print0 2>/dev/null || true) \
+        (find . -type f -print0 2>/dev/null || true) \
             | sort -z \
             | xargs -0 -r "$hash_cmd" > "$out_file"
     fi
@@ -219,9 +219,14 @@ run_verify() {
         echo "[-] FAILED: Checksum mismatches or missing files detected! (${elapsed}s)"
     fi
 
-    # Extra safety audit: count regular non-hidden files in target_dir to check for unlisted files
+    # Extra safety audit: count regular files in target_dir to check for unlisted files (including dot files)
     local current_count
-    current_count=$(find . ! -name . -name ".*" -prune -o -path "./$(basename "$hash_file")" -prune -o -type f -print0 2>/dev/null | tr -cd '\0' | wc -c | tr -d ' ')
+    if [[ "$hash_file" == "$target_dir/"* ]]; then
+        local exclude_verify_hash="./${hash_file#$target_dir/}"
+        current_count=$(find . -path "$exclude_verify_hash" -prune -o -type f -print0 2>/dev/null | tr -cd '\0' | wc -c | tr -d ' ')
+    else
+        current_count=$(find . -type f -print0 2>/dev/null | tr -cd '\0' | wc -c | tr -d ' ')
+    fi
 
     if [ "$current_count" -gt "$total_in_file" ]; then
         local diff_count=$(( current_count - total_in_file ))

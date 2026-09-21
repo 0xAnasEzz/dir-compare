@@ -12,12 +12,12 @@ show_usage() {
     cat << EOF
 Usage:
   1. Hashing Mode (Old Phone):
-     $0 hash <directory_path> [output_file] [algorithm: md5|sha256]
-     Example: $0 hash /sdcard/DCIM /sdcard/Download/dcim_old_phone.md5
+     dir-compare hash <directory_path> [output_file] [algorithm: md5|sha256]
+     Example: dir-compare hash /sdcard/DCIM /sdcard/Download/dcim_old_phone.md5
 
   2. Verification Mode (New Phone):
-     $0 verify <directory_path> <hash_file>
-     Example: $0 verify /sdcard/DCIM /sdcard/Download/dcim_old_phone.md5
+     dir-compare verify <directory_path> <hash_file>
+     Example: dir-compare verify /sdcard/DCIM /sdcard/Download/dcim_old_phone.md5
 
 Note:
   If no mode keyword is supplied, the script defaults to 'hash' mode
@@ -31,7 +31,7 @@ EOF
 run_hash() {
     if [ "$#" -lt 1 ]; then
         echo "Error: Target directory required for hash mode." >&2
-        echo "Usage: $0 hash <directory_path> [output_file] [algorithm: md5|sha256]"
+        echo "Usage: dir-compare hash <directory_path> [output_file] [algorithm: md5|sha256]"
         exit 1
     fi
 
@@ -130,7 +130,7 @@ run_hash() {
     echo "================================================================="
     echo "  1. Transfer '$out_file' to the new phone"
     echo "  2. Run this script in verify mode on the new phone:"
-    echo "     $0 verify \"$target_dir\" \"$out_file\""
+    echo "     dir-compare verify \"$target_dir\" \"$out_file\""
     echo "================================================================="
 }
 
@@ -140,7 +140,7 @@ run_hash() {
 run_verify() {
     if [ "$#" -lt 2 ]; then
         echo "Error: Both target directory and hash file are required for verify mode." >&2
-        echo "Usage: $0 verify <directory_path> <hash_file>"
+        echo "Usage: dir-compare verify <directory_path> <hash_file>"
         exit 1
     fi
 

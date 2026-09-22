@@ -4,8 +4,8 @@ set -euo pipefail
 # -----------------------------------------------------------------------------
 # Dual-Mode Directory Comparison & Verification Tool for Phone Migration
 # Modes:
-#   1. hash   : Computes deterministic checksums of target directory
-#   2. verify : Validates target directory against checksum manifest and reports
+#   1. hash   : Computes deterministic checksums of target directory/directories
+#   2. verify : Validates target directory/directories against checksum manifests
 # -----------------------------------------------------------------------------
 
 # =============================================================================
@@ -70,45 +70,60 @@ show_usage() {
     cat << EOF
 ${C_BOLD}Usage:${C_RESET}
   ${C_CYAN}1. Hashing Mode (Old Phone):${C_RESET}
-     dir-compare hash <directory_path> [output_file] [algorithm: md5|sha256]
-     Example: dir-compare hash /sdcard/DCIM /sdcard/Download/dcim_old_phone.md5
+     dir-compare hash <directory> [output_file] [algorithm: md5|sha256]
+     dir-compare hash <dir1,dir2,dir3,...> [algorithm: md5|sha256]
+     dir-compare hash <dir1> <dir2> <dir3> ...
+
+     ${C_BOLD}Examples:${C_RESET}
+       dir-compare hash /sdcard/DCIM
+       dir-compare hash Music,Downloads,Documents
+       dir-compare hash /sdcard/{Music,Download,Documents}
+       dir-compare hash Music,Downloads sha256
 
   ${C_CYAN}2. Verification Mode (New Phone):${C_RESET}
-     dir-compare verify <directory_path> [hash_file]
-     Example: dir-compare verify /sdcard/DCIM
+     dir-compare verify <directory> [hash_file]
+     dir-compare verify <dir1,dir2,dir3,...>
+     dir-compare verify <dir1> <dir2> <dir3> ...
+
+     ${C_BOLD}Examples:${C_RESET}
+       dir-compare verify /sdcard/DCIM
+       dir-compare verify Music,Downloads,Documents
+       dir-compare verify /sdcard/{Music,Download,Documents}
 
 ${C_DIM}Note:
-  If no mode keyword is supplied, the script defaults to 'hash' mode
-  for backward compatibility if the first argument is a directory.${C_RESET}
+  • When multiple directories are specified, each directory is processed
+    independently into its own manifest: ./dir-hashes/{folder_name}.md5
+  • If no mode keyword is supplied, the script defaults to 'hash' mode.${C_RESET}
 EOF
 }
 
 # =============================================================================
-# HASHING MODE
+# SINGLE DIRECTORY HASH FUNCTION
 # =============================================================================
-run_hash() {
-    setup_colors
-
-    if [ "$#" -lt 1 ]; then
-        echo -e "${C_RED}Error: Target directory required for hash mode.${C_RESET}" >&2
-        echo "Usage: dir-compare hash <directory_path> [output_file] [algorithm: md5|sha256]"
-        exit 1
-    fi
-
-    local target_dir="$1"
+hash_single_dir() {
+    local raw_target="$1"
+    local raw_out="${2:-}"
+    local algo_arg="${3:-}"
+    local orig_cwd="$4"
 
     # Validate target directory
-    if [ ! -d "$target_dir" ]; then
-        echo -e "${C_RED}Error: Directory '$target_dir' does not exist.${C_RESET}" >&2
-        exit 1
+    if [ ! -d "$raw_target" ]; then
+        echo -e "${C_RED}Error: Directory '$raw_target' does not exist.${C_RESET}" >&2
+        return 1
     fi
 
-    # Resolve absolute paths and default output file
-    target_dir="$(cd "$target_dir" && pwd)"
+    # Resolve absolute paths
+    local target_dir
+    target_dir="$(cd "$raw_target" && pwd)"
     local folder_name
     folder_name="$(basename "$target_dir")"
-    local out_file="${2:-./dir-hashes/${folder_name}.md5}"
-    local algo_arg="${3:-}"
+
+    local out_file="$raw_out"
+    if [ -z "$out_file" ]; then
+        out_file="${orig_cwd}/dir-hashes/${folder_name}.md5"
+    elif [[ "$out_file" != /* ]]; then
+        out_file="${orig_cwd}/${out_file}"
+    fi
     out_file="$(realpath -m "$out_file")"
 
     # Determine algorithm: explicit arg -> file extension -> default (md5)
@@ -119,7 +134,7 @@ run_hash() {
             md5|md5sum)       hash_cmd="md5sum" ;;
             *)
                 echo -e "${C_RED}Error: Unsupported algorithm '$algo_arg'. Use 'md5' or 'sha256'.${C_RESET}" >&2
-                exit 1
+                return 1
                 ;;
         esac
     else
@@ -133,7 +148,7 @@ run_hash() {
     # Verify checksum utility exists in PATH
     command -v "$hash_cmd" >/dev/null 2>&1 || {
         echo -e "${C_RED}Error: Required utility '$hash_cmd' not found in PATH.${C_RESET}" >&2
-        exit 1
+        return 1
     }
 
     # Ensure destination directory for output file exists
@@ -213,36 +228,197 @@ run_hash() {
     echo -e "  2. In Termux on the new phone, run:"
     echo -e "     ${C_CYAN}dir-compare verify \"$target_dir\" \"$out_file\"${C_RESET}"
     echo -e "${C_BOLD}=================================================================${C_RESET}"
+
+    # Set return state for multi-dir coordinator
+    RET_FILES="$file_count"
+    RET_FOLDERS="$folder_count"
+    RET_ELAPSED="$elapsed"
+    RET_OUT_FILE="$out_file"
+    return 0
 }
 
 # =============================================================================
-# VERIFICATION MODE
+# HASHING MODE COORDINATOR (Supports single & multi-directory)
 # =============================================================================
-run_verify() {
+run_hash() {
     setup_colors
+    local orig_cwd
+    orig_cwd="$(pwd)"
 
     if [ "$#" -lt 1 ]; then
-        echo -e "${C_RED}Error: Target directory required for verify mode.${C_RESET}" >&2
-        echo "Usage: dir-compare verify <directory_path> [hash_file]"
+        echo -e "${C_RED}Error: At least one target directory is required for hash mode.${C_RESET}" >&2
+        echo "Usage: dir-compare hash <dir1[,dir2,...] | dir1 dir2 ...> [output_file] [algorithm: md5|sha256]"
         exit 1
     fi
 
-    local target_dir="$1"
+    local target_dirs=()
+    local custom_out=""
+    local custom_algo=""
 
-    if [ ! -d "$target_dir" ]; then
-        echo -e "${C_RED}Error: Target directory '$target_dir' does not exist.${C_RESET}" >&2
-        exit 1
+    # Case 1: First argument contains a comma -> comma-separated directories
+    if [[ "$1" == *","* ]]; then
+        IFS=',' read -ra split_dirs <<< "$1"
+        for d in "${split_dirs[@]}"; do
+            d="$(echo "$d" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+            [ -n "$d" ] && target_dirs+=("$d")
+        done
+        shift
+
+        # Check if next argument is algorithm
+        if [ "$#" -ge 1 ]; then
+            case "${1,,}" in
+                md5|md5sum|sha256|sha256sum)
+                    custom_algo="$1"
+                    ;;
+            esac
+        fi
+
+    # Case 2: Space-separated arguments
+    else
+        while [ "$#" -gt 0 ]; do
+            if [ -d "$1" ]; then
+                target_dirs+=("$1")
+                shift
+            else
+                break
+            fi
+        done
+
+        # If no existing dir was matched, treat $1 as the single target directory
+        if [ "${#target_dirs[@]}" -eq 0 ]; then
+            target_dirs+=("$1")
+            shift
+        fi
+
+        # If only 1 directory was collected, check if following args are [output_file] [algorithm]
+        if [ "${#target_dirs[@]}" -eq 1 ] && [ "$#" -gt 0 ]; then
+            case "${1,,}" in
+                md5|md5sum|sha256|sha256sum)
+                    custom_algo="$1"
+                    shift
+                    ;;
+                *)
+                    custom_out="$1"
+                    shift
+                    if [ "$#" -gt 0 ]; then
+                        custom_algo="$1"
+                        shift
+                    fi
+                    ;;
+            esac
+        elif [ "${#target_dirs[@]}" -gt 1 ] && [ "$#" -gt 0 ]; then
+            case "${1,,}" in
+                md5|md5sum|sha256|sha256sum)
+                    custom_algo="$1"
+                    shift
+                    ;;
+            esac
+        fi
     fi
 
-    target_dir="$(cd "$target_dir" && pwd)"
+    local batch_count="${#target_dirs[@]}"
+    local batch_results=()
+    local batch_total_files=0
+    local batch_total_folders=0
+    local batch_start_time
+    batch_start_time=$(date +%s)
+    local batch_failed=0
+
+    local idx=1
+    for dir in "${target_dirs[@]}"; do
+        cd "$orig_cwd"
+        if [ "$batch_count" -gt 1 ]; then
+            echo ""
+            echo -e "${C_BOLD}=================================================================${C_RESET}"
+            echo -e "  ${C_CYAN}${C_BOLD}HASHING DIRECTORY [${idx}/${batch_count}]:${C_RESET} ${C_BOLD}$dir${C_RESET}"
+            echo -e "${C_BOLD}=================================================================${C_RESET}"
+        fi
+
+        RET_FILES=0
+        RET_FOLDERS=0
+        RET_ELAPSED=0
+        RET_OUT_FILE=""
+
+        if hash_single_dir "$dir" "$custom_out" "$custom_algo" "$orig_cwd"; then
+            batch_total_files=$(( batch_total_files + RET_FILES ))
+            batch_total_folders=$(( batch_total_folders + RET_FOLDERS ))
+            batch_results+=("${C_GREEN}✓${C_RESET} $(basename "$dir") : $(format_num "$RET_FILES") files, $(format_num "$RET_FOLDERS") folders ($(format_duration "$RET_ELAPSED")) -> $RET_OUT_FILE")
+        else
+            batch_failed=$(( batch_failed + 1 ))
+            batch_results+=("${C_RED}✗${C_RESET} $(basename "$dir") : FAILED (Directory not accessible)")
+        fi
+
+        idx=$(( idx + 1 ))
+    done
+
+    cd "$orig_cwd"
+
+    # Multi-directory batch summary
+    if [ "$batch_count" -gt 1 ]; then
+        local batch_end_time
+        batch_end_time=$(date +%s)
+        local batch_elapsed=$(( batch_end_time - batch_start_time ))
+
+        echo ""
+        echo -e "${C_BOLD}=================================================================${C_RESET}"
+        echo -e "                 ${C_CYAN}${C_BOLD}MULTI-DIRECTORY HASHING SUMMARY${C_RESET}"
+        echo -e "${C_BOLD}=================================================================${C_RESET}"
+        for res in "${batch_results[@]}"; do
+            echo -e "  $res"
+        done
+        echo -e "${C_DIM}-----------------------------------------------------------------${C_RESET}"
+        echo -e "  • ${C_BOLD}Total Directories :${C_RESET} $batch_count"
+        echo -e "  • ${C_BOLD}Total Files       :${C_RESET} $(format_num "$batch_total_files")"
+        echo -e "  • ${C_BOLD}Total Folders     :${C_RESET} $(format_num "$batch_total_folders")"
+        echo -e "  • ${C_BOLD}Total Time Spent  :${C_RESET} $(format_duration "$batch_elapsed")"
+        echo -e "${C_DIM}-----------------------------------------------------------------${C_RESET}"
+        if [ "$batch_failed" -eq 0 ]; then
+            echo -e "  ${C_BOLD}BATCH STATUS :${C_RESET} ${C_GREEN}${C_BOLD}ALL $batch_count MANIFESTS GENERATED SUCCESSFULLY${C_RESET}"
+        else
+            echo -e "  ${C_BOLD}BATCH STATUS :${C_RESET} ${C_RED}${C_BOLD}$batch_failed OF $batch_count DIRECTORIES ENCOUNTERED ERRORS${C_RESET}"
+        fi
+        echo -e "${C_BOLD}=================================================================${C_RESET}"
+    fi
+
+    [ "$batch_failed" -eq 0 ] || return 1
+}
+
+# =============================================================================
+# SINGLE DIRECTORY VERIFICATION FUNCTION
+# =============================================================================
+verify_single_dir() {
+    local raw_target="$1"
+    local raw_hash_file="${2:-}"
+    local orig_cwd="$3"
+
+    if [ ! -d "$raw_target" ]; then
+        echo -e "${C_RED}Error: Target directory '$raw_target' does not exist.${C_RESET}" >&2
+        return 1
+    fi
+
+    local target_dir
+    target_dir="$(cd "$raw_target" && pwd)"
     local folder_name
     folder_name="$(basename "$target_dir")"
-    local hash_file="${2:-./dir-hashes/${folder_name}.md5}"
+
+    # Resolve hash manifest path
+    local hash_file="$raw_hash_file"
+    if [ -z "$hash_file" ]; then
+        if [ -f "${orig_cwd}/dir-hashes/${folder_name}.md5" ]; then
+            hash_file="${orig_cwd}/dir-hashes/${folder_name}.md5"
+        elif [ -f "${orig_cwd}/dir-hashes/${folder_name}.sha256" ]; then
+            hash_file="${orig_cwd}/dir-hashes/${folder_name}.sha256"
+        else
+            hash_file="${orig_cwd}/dir-hashes/${folder_name}.md5"
+        fi
+    elif [[ "$hash_file" != /* ]]; then
+        hash_file="${orig_cwd}/${hash_file}"
+    fi
     hash_file="$(realpath -m "$hash_file")"
 
     if [ ! -f "$hash_file" ]; then
         echo -e "${C_RED}Error: Hash file '$hash_file' does not exist or is not a regular file.${C_RESET}" >&2
-        exit 1
+        return 1
     fi
 
     # Auto-detect hash algorithm: check first signature length in file
@@ -265,7 +441,7 @@ run_verify() {
 
     command -v "$hash_cmd" >/dev/null 2>&1 || {
         echo -e "${C_RED}Error: Required utility '$hash_cmd' not found in PATH.${C_RESET}" >&2
-        exit 1
+        return 1
     }
 
     echo -e "${C_CYAN}[*] Target Directory :${C_RESET} $target_dir"
@@ -324,6 +500,7 @@ run_verify() {
         exclude_verify_hash="./${hash_file#$target_dir/}"
     fi
 
+    local migrated_folders_count
     if [ -n "$exclude_verify_hash" ]; then
         (find . -path "$exclude_verify_hash" -prune -o -type f -print 2>/dev/null || true) | sort > "$tmp_dir/current_paths.txt"
         migrated_folders_count=$(find . ! -name . -path "$exclude_verify_hash" -prune -o -type d -print 2>/dev/null | wc -l | tr -d ' ')
@@ -336,17 +513,14 @@ run_verify() {
     migrated_files_count=$(wc -l < "$tmp_dir/current_paths.txt" | tr -d ' ')
 
     # 5. Determine sets via comm
-    # Files in old phone only (missing on new phone)
     comm -23 "$tmp_dir/orig_paths.txt" "$tmp_dir/current_paths.txt" > "$tmp_dir/old_only.txt" || true
     local old_only_count
     old_only_count=$(wc -l < "$tmp_dir/old_only.txt" | tr -d ' ')
 
-    # Files in new phone only (extra on new phone)
     comm -13 "$tmp_dir/orig_paths.txt" "$tmp_dir/current_paths.txt" > "$tmp_dir/new_only.txt" || true
     local new_only_count
     new_only_count=$(wc -l < "$tmp_dir/new_only.txt" | tr -d ' ')
 
-    # Files existing in both phones
     comm -12 "$tmp_dir/orig_paths.txt" "$tmp_dir/current_paths.txt" > "$tmp_dir/common_paths.txt" || true
     local common_count
     common_count=$(wc -l < "$tmp_dir/common_paths.txt" | tr -d ' ')
@@ -354,7 +528,6 @@ run_verify() {
     # 6. Check signatures for common files
     echo -e "${C_CYAN}[*] Verifying checksums for common files ($(format_num "$common_count") files)...${C_RESET}"
 
-    # Build manifest containing only common files to verify
     awk 'NR==FNR { common[$0]=1; next }
     {
         line = $0
@@ -484,20 +657,161 @@ run_verify() {
     # -------------------------------------------------------------------------
     # OVERALL STATUS BANNER
     # -------------------------------------------------------------------------
+    local status_code=0
     echo -e "${C_BOLD}=================================================================${C_RESET}"
     if [ "$mismatch_count" -eq 0 ] && [ "$old_only_count" -eq 0 ] && [ "$new_only_count" -eq 0 ]; then
         echo -e "  ${C_BOLD}OVERALL STATUS :${C_RESET} ${C_GREEN}${C_BOLD}SUCCESS (100% Bit-for-bit identical!)${C_RESET}"
         echo -e "${C_BOLD}=================================================================${C_RESET}"
-        return 0
+        status_code=0
     elif [ "$mismatch_count" -eq 0 ] && [ "$old_only_count" -eq 0 ]; then
         echo -e "  ${C_BOLD}OVERALL STATUS :${C_RESET} ${C_YELLOW}${C_BOLD}PASS WITH WARNING (All original files intact; extra files found on new phone)${C_RESET}"
         echo -e "${C_BOLD}=================================================================${C_RESET}"
-        return 0
+        status_code=0
     else
         echo -e "  ${C_BOLD}OVERALL STATUS :${C_RESET} ${C_RED}${C_BOLD}FAILED ($(format_num "$mismatch_count") mismatches, $(format_num "$old_only_count") missing files)${C_RESET}"
         echo -e "${C_BOLD}=================================================================${C_RESET}"
-        return 1
+        status_code=1
     fi
+
+    # Set return state for multi-dir coordinator
+    RET_STATUS="$status_code"
+    RET_MISMATCHES="$mismatch_count"
+    RET_OLD_ONLY="$old_only_count"
+    RET_NEW_ONLY="$new_only_count"
+    RET_TOTAL_FILES="$orig_files_count"
+    RET_ELAPSED="$elapsed"
+
+    return "$status_code"
+}
+
+# =============================================================================
+# VERIFICATION MODE COORDINATOR (Supports single & multi-directory)
+# =============================================================================
+run_verify() {
+    setup_colors
+    local orig_cwd
+    orig_cwd="$(pwd)"
+
+    if [ "$#" -lt 1 ]; then
+        echo -e "${C_RED}Error: At least one target directory is required for verify mode.${C_RESET}" >&2
+        echo "Usage: dir-compare verify <dir1[,dir2,...] | dir1 dir2 ...> [hash_file]"
+        exit 1
+    fi
+
+    local target_dirs=()
+    local custom_hash_file=""
+
+    # Case 1: First argument contains a comma -> comma-separated directories
+    if [[ "$1" == *","* ]]; then
+        IFS=',' read -ra split_dirs <<< "$1"
+        for d in "${split_dirs[@]}"; do
+            d="$(echo "$d" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+            [ -n "$d" ] && target_dirs+=("$d")
+        done
+        shift
+
+    # Case 2: Space-separated arguments
+    else
+        while [ "$#" -gt 0 ]; do
+            if [ -d "$1" ]; then
+                target_dirs+=("$1")
+                shift
+            else
+                break
+            fi
+        done
+
+        if [ "${#target_dirs[@]}" -eq 0 ]; then
+            target_dirs+=("$1")
+            shift
+        fi
+
+        # If only 1 directory was collected and there is another arg, it's custom hash_file
+        if [ "${#target_dirs[@]}" -eq 1 ] && [ "$#" -gt 0 ]; then
+            custom_hash_file="$1"
+            shift
+        fi
+    fi
+
+    local batch_count="${#target_dirs[@]}"
+    local batch_results=()
+    local batch_passed_dirs=0
+    local batch_warn_dirs=0
+    local batch_failed_dirs=0
+    local batch_start_time
+    batch_start_time=$(date +%s)
+
+    local idx=1
+    for dir in "${target_dirs[@]}"; do
+        cd "$orig_cwd"
+        if [ "$batch_count" -gt 1 ]; then
+            echo ""
+            echo -e "${C_BOLD}=================================================================${C_RESET}"
+            echo -e "  ${C_CYAN}${C_BOLD}VERIFYING DIRECTORY [${idx}/${batch_count}]:${C_RESET} ${C_BOLD}$dir${C_RESET}"
+            echo -e "${C_BOLD}=================================================================${C_RESET}"
+        fi
+
+        RET_STATUS=0
+        RET_MISMATCHES=0
+        RET_OLD_ONLY=0
+        RET_NEW_ONLY=0
+        RET_TOTAL_FILES=0
+        RET_ELAPSED=0
+
+        local v_res=0
+        verify_single_dir "$dir" "$custom_hash_file" "$orig_cwd" || v_res=$?
+
+        if [ "$v_res" -eq 0 ] && [ "$RET_NEW_ONLY" -eq 0 ]; then
+            batch_passed_dirs=$(( batch_passed_dirs + 1 ))
+            batch_results+=("${C_GREEN}✓${C_RESET} $(basename "$dir") : PERFECT MATCH ($(format_num "$RET_TOTAL_FILES") files)")
+        elif [ "$v_res" -eq 0 ]; then
+            batch_warn_dirs=$(( batch_warn_dirs + 1 ))
+            batch_results+=("${C_YELLOW}⚠${C_RESET} $(basename "$dir") : INTACT ($(format_num "$RET_TOTAL_FILES") files, $(format_num "$RET_NEW_ONLY") extra)")
+        else
+            batch_failed_dirs=$(( batch_failed_dirs + 1 ))
+            batch_results+=("${C_RED}✗${C_RESET} $(basename "$dir") : FAILED ($(format_num "$RET_MISMATCHES") mismatches, $(format_num "$RET_OLD_ONLY") missing)")
+        fi
+
+        idx=$(( idx + 1 ))
+    done
+
+    cd "$orig_cwd"
+
+    # Multi-directory batch summary
+    if [ "$batch_count" -gt 1 ]; then
+        local batch_end_time
+        batch_end_time=$(date +%s)
+        local batch_elapsed=$(( batch_end_time - batch_start_time ))
+
+        echo ""
+        echo -e "${C_BOLD}=================================================================${C_RESET}"
+        echo -e "               ${C_CYAN}${C_BOLD}MULTI-DIRECTORY VERIFICATION SUMMARY${C_RESET}"
+        echo -e "${C_BOLD}=================================================================${C_RESET}"
+        for res in "${batch_results[@]}"; do
+            echo -e "  $res"
+        done
+        echo -e "${C_DIM}-----------------------------------------------------------------${C_RESET}"
+        echo -e "  • ${C_BOLD}Total Directories Checked :${C_RESET} $batch_count"
+        echo -e "  • ${C_BOLD}Perfect / Clean Matches   :${C_RESET} ${C_GREEN}$batch_passed_dirs${C_RESET}"
+        if [ "$batch_warn_dirs" -gt 0 ]; then
+            echo -e "  • ${C_BOLD}Intact with Extra Files   :${C_RESET} ${C_YELLOW}$batch_warn_dirs${C_RESET}"
+        fi
+        if [ "$batch_failed_dirs" -gt 0 ]; then
+            echo -e "  • ${C_BOLD}Failed Directories        :${C_RESET} ${C_RED}${C_BOLD}$batch_failed_dirs${C_RESET}"
+        else
+            echo -e "  • ${C_BOLD}Failed Directories        :${C_RESET} ${C_GREEN}0${C_RESET}"
+        fi
+        echo -e "  • ${C_BOLD}Total Time Spent          :${C_RESET} $(format_duration "$batch_elapsed")"
+        echo -e "${C_DIM}-----------------------------------------------------------------${C_RESET}"
+        if [ "$batch_failed_dirs" -eq 0 ]; then
+            echo -e "  ${C_BOLD}OVERALL BATCH STATUS :${C_RESET} ${C_GREEN}${C_BOLD}SUCCESS (All directories verified)${C_RESET}"
+        else
+            echo -e "  ${C_BOLD}OVERALL BATCH STATUS :${C_RESET} ${C_RED}${C_BOLD}FAILED ($batch_failed_dirs directories had mismatches or missing files)${C_RESET}"
+        fi
+        echo -e "${C_BOLD}=================================================================${C_RESET}"
+    fi
+
+    [ "$batch_failed_dirs" -eq 0 ] || return 1
 }
 
 # =============================================================================
@@ -519,8 +833,8 @@ case "${MODE,,}" in
         exit 0
         ;;
     *)
-        # Default to hash mode if first argument is an existing directory (backward compatibility)
-        if [ -n "$MODE" ] && [ -d "$MODE" ]; then
+        # Default to hash mode if first argument is a directory or comma-separated list
+        if [ -n "$MODE" ] && ([ -d "$MODE" ] || [[ "$MODE" == *","* ]]); then
             run_hash "$@"
         else
             show_usage

@@ -74,8 +74,8 @@ ${C_BOLD}Usage:${C_RESET}
      Example: dir-compare hash /sdcard/DCIM /sdcard/Download/dcim_old_phone.md5
 
   ${C_CYAN}2. Verification Mode (New Phone):${C_RESET}
-     dir-compare verify <directory_path> <hash_file>
-     Example: dir-compare verify /sdcard/DCIM /sdcard/Download/dcim_old_phone.md5
+     dir-compare verify <directory_path> [hash_file]
+     Example: dir-compare verify /sdcard/DCIM
 
 ${C_DIM}Note:
   If no mode keyword is supplied, the script defaults to 'hash' mode
@@ -96,8 +96,6 @@ run_hash() {
     fi
 
     local target_dir="$1"
-    local out_file="${2:-hashes.md5}"
-    local algo_arg="${3:-}"
 
     # Validate target directory
     if [ ! -d "$target_dir" ]; then
@@ -105,8 +103,12 @@ run_hash() {
         exit 1
     fi
 
-    # Resolve absolute paths
+    # Resolve absolute paths and default output file
     target_dir="$(cd "$target_dir" && pwd)"
+    local folder_name
+    folder_name="$(basename "$target_dir")"
+    local out_file="${2:-./dir-hashes/${folder_name}.md5}"
+    local algo_arg="${3:-}"
     out_file="$(realpath -m "$out_file")"
 
     # Determine algorithm: explicit arg -> file extension -> default (md5)
@@ -219,27 +221,29 @@ run_hash() {
 run_verify() {
     setup_colors
 
-    if [ "$#" -lt 2 ]; then
-        echo -e "${C_RED}Error: Both target directory and hash file are required for verify mode.${C_RESET}" >&2
-        echo "Usage: dir-compare verify <directory_path> <hash_file>"
+    if [ "$#" -lt 1 ]; then
+        echo -e "${C_RED}Error: Target directory required for verify mode.${C_RESET}" >&2
+        echo "Usage: dir-compare verify <directory_path> [hash_file]"
         exit 1
     fi
 
     local target_dir="$1"
-    local hash_file="$2"
 
     if [ ! -d "$target_dir" ]; then
         echo -e "${C_RED}Error: Target directory '$target_dir' does not exist.${C_RESET}" >&2
         exit 1
     fi
 
+    target_dir="$(cd "$target_dir" && pwd)"
+    local folder_name
+    folder_name="$(basename "$target_dir")"
+    local hash_file="${2:-./dir-hashes/${folder_name}.md5}"
+    hash_file="$(realpath -m "$hash_file")"
+
     if [ ! -f "$hash_file" ]; then
         echo -e "${C_RED}Error: Hash file '$hash_file' does not exist or is not a regular file.${C_RESET}" >&2
         exit 1
     fi
-
-    target_dir="$(cd "$target_dir" && pwd)"
-    hash_file="$(realpath "$hash_file")"
 
     # Auto-detect hash algorithm: check first signature length in file
     local hash_cmd=""

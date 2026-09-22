@@ -72,18 +72,19 @@ ${C_BOLD}Usage:${C_RESET}
   ${C_CYAN}1. Hashing Mode (Old Phone):${C_RESET}
      dir-compare hash <directory> [output_file] [algorithm: md5|sha256]
      dir-compare hash <dir1,dir2,dir3,...> [algorithm: md5|sha256]
-     dir-compare hash <dir1> <dir2> <dir3> ...
+     dir-compare hash <path/{dir1,dir2,...}> [algorithm: md5|sha256]
 
      ${C_BOLD}Examples:${C_RESET}
        dir-compare hash /sdcard/DCIM
        dir-compare hash Music,Downloads,Documents
        dir-compare hash /sdcard/{Music,Download,Documents}
        dir-compare hash Music,Downloads sha256
+       dir-compare hash /sdcard/{Music,Download} sha256
 
   ${C_CYAN}2. Verification Mode (New Phone):${C_RESET}
      dir-compare verify <directory> [hash_file]
      dir-compare verify <dir1,dir2,dir3,...>
-     dir-compare verify <dir1> <dir2> <dir3> ...
+     dir-compare verify <path/{dir1,dir2,...}>
 
      ${C_BOLD}Examples:${C_RESET}
        dir-compare verify /sdcard/DCIM
@@ -91,8 +92,8 @@ ${C_BOLD}Usage:${C_RESET}
        dir-compare verify /sdcard/{Music,Download,Documents}
 
 ${C_DIM}Note:
-  • When multiple directories are specified, each directory is processed
-    independently into its own manifest: ./dir-hashes/{folder_name}.md5
+  • When multiple directories are specified (comma-separated or brace expansion), each directory
+    is processed independently into its own manifest: ./dir-hashes/{folder_name}.md5
   • If no mode keyword is supplied, the script defaults to 'hash' mode.${C_RESET}
 EOF
 }
@@ -247,7 +248,7 @@ run_hash() {
 
     if [ "$#" -lt 1 ]; then
         echo -e "${C_RED}Error: At least one target directory is required for hash mode.${C_RESET}" >&2
-        echo "Usage: dir-compare hash <dir1[,dir2,...] | dir1 dir2 ...> [output_file] [algorithm: md5|sha256]"
+        echo "Usage: dir-compare hash <dir1[,dir2,...] | path/{dir1,dir2,...}> [output_file] [algorithm: md5|sha256]"
         exit 1
     fi
 
@@ -255,8 +256,26 @@ run_hash() {
     local custom_out=""
     local custom_algo=""
 
-    # Case 1: First argument contains a comma -> comma-separated directories
-    if [[ "$1" == *","* ]]; then
+    # Case 1: First argument contains literal brace expansion syntax (e.g. /sdcard/{Music,Download})
+    if [[ "$1" == *"{"*"}"* ]]; then
+        eval "local expanded=($1)"
+        for d in "${expanded[@]}"; do
+            [ -n "$d" ] && target_dirs+=("$d")
+        done
+        shift
+
+        # Check if next argument is algorithm
+        if [ "$#" -ge 1 ]; then
+            case "${1,,}" in
+                md5|md5sum|sha256|sha256sum)
+                    custom_algo="$1"
+                    shift
+                    ;;
+            esac
+        fi
+
+    # Case 2: First argument contains a comma -> comma-separated directories
+    elif [[ "$1" == *","* ]]; then
         IFS=',' read -ra split_dirs <<< "$1"
         for d in "${split_dirs[@]}"; do
             d="$(echo "$d" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
@@ -269,29 +288,35 @@ run_hash() {
             case "${1,,}" in
                 md5|md5sum|sha256|sha256sum)
                     custom_algo="$1"
+                    shift
                     ;;
             esac
         fi
 
-    # Case 2: Space-separated arguments
-    else
-        while [ "$#" -gt 0 ]; do
-            if [ -d "$1" ]; then
-                target_dirs+=("$1")
-                shift
-            else
-                break
-            fi
-        done
-
-        # If no existing dir was matched, treat $1 as the single target directory
-        if [ "${#target_dirs[@]}" -eq 0 ]; then
+    # Case 3: Shell-expanded brace expansion (multiple directory arguments)
+    elif [ "$#" -gt 1 ] && [ -d "${2:-}" ]; then
+        while [ "$#" -gt 0 ] && [ -d "$1" ]; do
             target_dirs+=("$1")
             shift
+        done
+
+        # Check if trailing argument is algorithm
+        if [ "$#" -gt 0 ]; then
+            case "${1,,}" in
+                md5|md5sum|sha256|sha256sum)
+                    custom_algo="$1"
+                    shift
+                    ;;
+            esac
         fi
 
-        # If only 1 directory was collected, check if following args are [output_file] [algorithm]
-        if [ "${#target_dirs[@]}" -eq 1 ] && [ "$#" -gt 0 ]; then
+    # Case 4: Single directory target
+    else
+        target_dirs+=("$1")
+        shift
+
+        # Check for optional [output_file] and/or [algorithm]
+        if [ "$#" -gt 0 ]; then
             case "${1,,}" in
                 md5|md5sum|sha256|sha256sum)
                     custom_algo="$1"
@@ -301,16 +326,13 @@ run_hash() {
                     custom_out="$1"
                     shift
                     if [ "$#" -gt 0 ]; then
-                        custom_algo="$1"
-                        shift
+                        case "${1,,}" in
+                            md5|md5sum|sha256|sha256sum)
+                                custom_algo="$1"
+                                shift
+                                ;;
+                        esac
                     fi
-                    ;;
-            esac
-        elif [ "${#target_dirs[@]}" -gt 1 ] && [ "$#" -gt 0 ]; then
-            case "${1,,}" in
-                md5|md5sum|sha256|sha256sum)
-                    custom_algo="$1"
-                    shift
                     ;;
             esac
         fi
@@ -694,15 +716,23 @@ run_verify() {
 
     if [ "$#" -lt 1 ]; then
         echo -e "${C_RED}Error: At least one target directory is required for verify mode.${C_RESET}" >&2
-        echo "Usage: dir-compare verify <dir1[,dir2,...] | dir1 dir2 ...> [hash_file]"
+        echo "Usage: dir-compare verify <dir1[,dir2,...] | path/{dir1,dir2,...}> [hash_file]"
         exit 1
     fi
 
     local target_dirs=()
     local custom_hash_file=""
 
-    # Case 1: First argument contains a comma -> comma-separated directories
-    if [[ "$1" == *","* ]]; then
+    # Case 1: First argument contains literal brace expansion syntax (e.g. /sdcard/{Music,Download})
+    if [[ "$1" == *"{"*"}"* ]]; then
+        eval "local expanded=($1)"
+        for d in "${expanded[@]}"; do
+            [ -n "$d" ] && target_dirs+=("$d")
+        done
+        shift
+
+    # Case 2: First argument contains a comma -> comma-separated directories
+    elif [[ "$1" == *","* ]]; then
         IFS=',' read -ra split_dirs <<< "$1"
         for d in "${split_dirs[@]}"; do
             d="$(echo "$d" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
@@ -710,24 +740,20 @@ run_verify() {
         done
         shift
 
-    # Case 2: Space-separated arguments
-    else
-        while [ "$#" -gt 0 ]; do
-            if [ -d "$1" ]; then
-                target_dirs+=("$1")
-                shift
-            else
-                break
-            fi
-        done
-
-        if [ "${#target_dirs[@]}" -eq 0 ]; then
+    # Case 3: Shell-expanded brace expansion (multiple directory arguments)
+    elif [ "$#" -gt 1 ] && [ -d "${2:-}" ]; then
+        while [ "$#" -gt 0 ] && [ -d "$1" ]; do
             target_dirs+=("$1")
             shift
-        fi
+        done
 
-        # If only 1 directory was collected and there is another arg, it's custom hash_file
-        if [ "${#target_dirs[@]}" -eq 1 ] && [ "$#" -gt 0 ]; then
+    # Case 4: Single directory target
+    else
+        target_dirs+=("$1")
+        shift
+
+        # Check for optional [hash_file]
+        if [ "$#" -gt 0 ]; then
             custom_hash_file="$1"
             shift
         fi
@@ -833,8 +859,8 @@ case "${MODE,,}" in
         exit 0
         ;;
     *)
-        # Default to hash mode if first argument is a directory or comma-separated list
-        if [ -n "$MODE" ] && ([ -d "$MODE" ] || [[ "$MODE" == *","* ]]); then
+        # Default to hash mode if first argument is a directory, comma-separated list, or brace expansion
+        if [ -n "$MODE" ] && ([ -d "$MODE" ] || [[ "$MODE" == *","* ]] || [[ "$MODE" == *"{"*"}"* ]]); then
             run_hash "$@"
         else
             show_usage

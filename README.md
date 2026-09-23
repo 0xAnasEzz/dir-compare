@@ -1,12 +1,26 @@
-# dir-compare
+<p align="center">
+  <img src="assets/banner.svg" alt="dir-compare banner" width="100%">
+</p>
 
-[![Bash](https://img.shields.io/badge/Language-Bash%204%2B-4EAA25.svg?logo=gnu-bash&logoColor=white)](https://www.gnu.org/software/bash/)
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Android%20(Termux)%20%7C%20macOS%20%7C%20WSL-blue.svg)](#requirements)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](#license)
+<h1 align="center">dir-compare</h1>
+
+<p align="center">
+  <strong>Decoupled Directory Hashing &amp; Bit-for-Bit Integrity Verification</strong>
+  <br>
+  <a href="https://www.gnu.org/software/bash/"><img src="https://img.shields.io/badge/Language-Bash%204%2B-4EAA25.svg?logo=gnu-bash&logoColor=white" alt="Bash 4+"></a>
+  <a href="#requirements"><img src="https://img.shields.io/badge/Platform-Linux%20%7C%20Android%20(Termux)%20%7C%20macOS%20%7C%20WSL-blue.svg" alt="Platform"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
+</p>
+
+<br>
+
+<img src="assets/logo.svg" align="right" width="135" alt="dir-compare logo">
 
 **`dir-compare`** is a resilient, lightweight, dual-mode directory hashing and verification tool. Originally crafted to guarantee bit-for-bit integrity during **Android phone migrations**, it allows you to verify that thousands of photos, videos, music, and nested folders transfer completely across devices without missing, corrupted, or duplicate files.
 
 Traditional comparison tools like `diff -r` require mounting both filesystems side-by-side. `dir-compare` **decouples the process**: create a portable checksum manifest on the source device, transfer the small manifest file, and verify it on the target device with a detailed integrity audit.
+
+<br clear="right"/>
 
 ---
 

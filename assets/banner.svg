@@ -1,0 +1,270 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 420" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070c18"/>
+      <stop offset="50%" stop-color="#0d162d"/>
+      <stop offset="100%" stop-color="#060b16"/>
+    </linearGradient>
+
+    <!-- Outer Border Gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.85"/>
+      <stop offset="35%" stop-color="#6366f1" stop-opacity="0.45"/>
+      <stop offset="70%" stop-color="#2dd4bf" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0.85"/>
+    </linearGradient>
+
+    <!-- Title Gradient -->
+    <linearGradient id="titleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="45%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+
+    <!-- Folder Gradients -->
+    <linearGradient id="cyanFolder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="emeraldFolder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <!-- Terminal Window Gradients -->
+    <linearGradient id="termBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#090e1a"/>
+    </linearGradient>
+    <linearGradient id="termBar" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="successGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#065f46"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+
+    <!-- Pill Tag Gradient -->
+    <linearGradient id="pillGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0369a1" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#065f46" stop-opacity="0.35"/>
+    </linearGradient>
+
+    <!-- Ambient Lighting Blooms -->
+    <radialGradient id="leftGlow" cx="20%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rightGlow" cx="80%" cy="60%" r="50%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Filters -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+    <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="22" flood-color="#020617" flood-opacity="0.85"/>
+    </filter>
+    <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Container Base -->
+  <rect x="8" y="8" width="1264" height="404" rx="24" fill="url(#bgGrad)" stroke="url(#borderGrad)" stroke-width="2" />
+
+  <!-- Ambient Light Orbs -->
+  <circle cx="280" cy="180" r="280" fill="url(#leftGlow)" />
+  <circle cx="1020" cy="220" r="260" fill="url(#rightGlow)" />
+
+  <!-- Background Tech Circuit / Dot Matrix -->
+  <g opacity="0.06" stroke="#f8fafc" stroke-width="1.2" stroke-dasharray="3 9">
+    <line x1="40" y1="90" x2="1240" y2="90" />
+    <line x1="40" y1="210" x2="1240" y2="210" />
+    <line x1="40" y1="330" x2="1240" y2="330" />
+    <line x1="160" y1="20" x2="160" y2="400" />
+    <line x1="420" y1="20" x2="420" y2="400" />
+    <line x1="720" y1="20" x2="720" y2="400" />
+    <line x1="980" y1="20" x2="980" y2="400" />
+  </g>
+
+  <!-- ==================== LEFT HERO BRAND SECTION ==================== -->
+  <g transform="translate(64, 46)">
+
+    <!-- Top Badge Pill -->
+    <g transform="translate(0, 0)">
+      <rect x="0" y="0" width="310" height="28" rx="14" fill="url(#pillGrad)" stroke="#38bdf8" stroke-width="1" stroke-opacity="0.6"/>
+      <circle cx="16" cy="14" r="4" fill="#38bdf8" filter="url(#glowEffect)"/>
+      <text x="28" y="18" fill="#e0f2fe" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" letter-spacing="1.2">DECOUPLED HASH &amp; VERIFY</text>
+      <line x1="205" y1="7" x2="205" y2="21" stroke="#38bdf8" stroke-opacity="0.3"/>
+      <text x="216" y="18" fill="#34d399" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" letter-spacing="1">BASH 4+</text>
+    </g>
+
+    <!-- Main Title with Icon -->
+    <g transform="translate(0, 42)">
+      <!-- Integrated Mini Logo Icon -->
+      <g transform="translate(0, 4)" filter="url(#shadow)">
+        <rect x="0" y="0" width="62" height="62" rx="16" fill="#0d1527" stroke="url(#borderGrad)" stroke-width="1.5"/>
+        <!-- Left Folder Tab & Flap -->
+        <path d="M 11 23 C 11 20 13 18 16 18 L 24 18 L 27 21 L 35 21 C 38 21 40 23 40 26 L 40 43 C 40 46 38 48 35 48 L 16 48 C 13 48 11 46 11 43 Z" fill="url(#cyanFolder)" opacity="0.9"/>
+        <!-- Right Folder Tab & Flap -->
+        <path d="M 21 27 C 21 24 23 22 26 22 L 34 22 L 37 25 L 45 25 C 48 25 50 27 50 30 L 50 47 C 50 50 48 52 45 52 L 26 52 C 23 52 21 50 21 47 Z" fill="url(#emeraldFolder)"/>
+        <!-- Central Shield & Checkmark -->
+        <path d="M 31 29 L 38 32 C 38 38 35 43 31 45 C 27 43 24 38 24 32 Z" fill="#0f172a" stroke="#38bdf8" stroke-width="1.2"/>
+        <path d="M 27 37 L 30 40 L 35 34" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+
+      <!-- Main Project Title -->
+      <text x="78" y="52" fill="url(#titleGrad)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="900" letter-spacing="-1.5">dir-compare</text>
+    </g>
+
+    <!-- Subtitle -->
+    <text x="2" y="142" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="20" font-weight="700" letter-spacing="-0.3">
+      Dual-Mode Directory Hashing &amp; Bit-for-Bit Integrity Verification
+    </text>
+
+    <!-- Supporting Narrative -->
+    <g transform="translate(2, 172)" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14.5" font-weight="400">
+      <text x="0" y="0">Engineered for foolproof data migrations between phones, servers &amp; external drives.</text>
+      <text x="0" y="24">Generate portable checksum manifests on source • Verify bit-for-bit offline anywhere.</text>
+    </g>
+
+    <!-- Feature Pill Badges with Crisp Vector Icons -->
+    <g transform="translate(0, 240)">
+
+      <!-- Badge 1: Android / Termux -->
+      <g transform="translate(0, 0)">
+        <rect x="0" y="0" width="144" height="34" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.2"/>
+        <!-- Phone Vector Icon -->
+        <g transform="translate(14, 8)" stroke="#38bdf8" stroke-width="1.5" fill="none">
+          <rect x="2" y="1" width="12" height="16" rx="2"/>
+          <line x1="6" y1="14" x2="10" y2="14" stroke-linecap="round"/>
+        </g>
+        <text x="36" y="21.5" fill="#e2e8f0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600">Termux Ready</text>
+      </g>
+
+      <!-- Badge 2: MD5 & SHA-256 -->
+      <g transform="translate(156, 0)">
+        <rect x="0" y="0" width="154" height="34" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.2"/>
+        <!-- Lock Vector Icon -->
+        <g transform="translate(14, 8)" stroke="#a78bfa" stroke-width="1.5" fill="none">
+          <rect x="2" y="7" width="13" height="10" rx="1.5"/>
+          <path d="M 5 7 L 5 4.5 C 5 2.6 6.6 1 8.5 1 C 10.4 1 12 2.6 12 4.5 L 12 7"/>
+          <circle cx="8.5" cy="12" r="1" fill="#a78bfa"/>
+        </g>
+        <text x="36" y="21.5" fill="#e2e8f0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600">MD5 &amp; SHA-256</text>
+      </g>
+
+      <!-- Badge 3: 4-Way Diff Set -->
+      <g transform="translate(322, 0)">
+        <rect x="0" y="0" width="146" height="34" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.2"/>
+        <!-- Diff Arrows Icon -->
+        <g transform="translate(14, 8)" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+          <path d="M 2 5 L 14 5 M 10 2 L 14 5 L 10 8"/>
+          <path d="M 14 13 L 2 13 M 6 10 L 2 13 L 6 16"/>
+        </g>
+        <text x="36" y="21.5" fill="#e2e8f0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600">4-Way Diff Set</text>
+      </g>
+
+      <!-- Badge 4: Batch Processing -->
+      <g transform="translate(480, 0)">
+        <rect x="0" y="0" width="138" height="34" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.2"/>
+        <!-- Multi-Folder Icon -->
+        <g transform="translate(14, 8)" stroke="#fbbf24" stroke-width="1.4" fill="none">
+          <path d="M 1 4 C 1 2.8 1.8 2 3 2 L 6 2 L 8 4 L 14 4 C 15.2 4 16 4.8 16 6 L 16 13 C 16 14.2 15.2 15 14 15 L 3 15 C 1.8 15 1 14.2 1 13 Z"/>
+          <line x1="4" y1="18" x2="16" y2="18" stroke-linecap="round"/>
+        </g>
+        <text x="36" y="21.5" fill="#e2e8f0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600">Batch Folders</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ==================== RIGHT AUDIT HUD CARD ==================== -->
+  <g transform="translate(735, 45)" filter="url(#cardShadow)">
+    <!-- Terminal Outer Frame -->
+    <rect x="0" y="0" width="480" height="330" rx="16" fill="url(#termBg)" stroke="#334155" stroke-width="1.5"/>
+
+    <!-- Terminal Window Bar -->
+    <path d="M 0 16 C 0 7.16 7.16 0 16 0 L 464 0 C 472.84 0 480 7.16 480 16 L 480 40 L 0 40 Z" fill="url(#termBar)"/>
+    <line x1="0" y1="40" x2="480" y2="40" stroke="#1e293b" stroke-width="1"/>
+
+    <!-- Window Dots -->
+    <circle cx="20" cy="20" r="5.5" fill="#f87171" opacity="0.85"/>
+    <circle cx="38" cy="20" r="5.5" fill="#fbbf24" opacity="0.85"/>
+    <circle cx="56" cy="20" r="5.5" fill="#34d399" opacity="0.85"/>
+
+    <!-- Window Title -->
+    <text x="240" y="24" fill="#94a3b8" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" text-anchor="middle">
+      bash - dir-compare verify
+    </text>
+
+    <!-- Terminal Body Content -->
+    <g transform="translate(24, 62)" font-family="'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace">
+
+      <!-- Command Prompt Line -->
+      <text x="0" y="16" font-size="12.5">
+        <tspan fill="#34d399" font-weight="700">target$</tspan>
+        <tspan fill="#f8fafc"> dir-compare verify /sdcard/DCIM</tspan>
+      </text>
+
+      <!-- Target & Manifest Metadata -->
+      <g font-size="12">
+        <text x="0" y="44" fill="#64748b">Target   :</text>
+        <text x="82" y="44" fill="#38bdf8" font-weight="600">/sdcard/DCIM</text>
+
+        <text x="0" y="66" fill="#64748b">Manifest :</text>
+        <text x="82" y="66" fill="#94a3b8">DCIM.sha256 </text>
+        <text x="175" y="66" fill="#a78bfa" font-size="11">(SHA-256 auto-detected)</text>
+
+        <text x="0" y="88" fill="#64748b">Files    :</text>
+        <text x="82" y="88" fill="#f1f5f9" font-weight="600">4,821 scanned</text>
+        <text x="180" y="88" fill="#64748b">in 32 directories</text>
+      </g>
+
+      <!-- Divider Line -->
+      <line x1="0" y1="106" x2="432" y2="106" stroke="#1e293b" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+      <!-- Audit Results Breakdown -->
+      <g font-size="12.5">
+        <!-- Matches -->
+        <text x="0" y="130" fill="#34d399" font-weight="700">[✓] Perfect Matches</text>
+        <text x="210" y="130" fill="#64748b">:</text>
+        <text x="225" y="130" fill="#34d399" font-weight="700">4,821</text>
+        <text x="276" y="130" fill="#10b981" font-size="11" font-weight="600">(100.0%)</text>
+
+        <!-- Mismatches -->
+        <text x="0" y="152" fill="#94a3b8">[✓] Signature Mismatches</text>
+        <text x="210" y="152" fill="#64748b">:</text>
+        <text x="225" y="152" fill="#64748b">0</text>
+        <text x="246" y="152" fill="#64748b" font-size="11">(None)</text>
+
+        <!-- Missing -->
+        <text x="0" y="174" fill="#94a3b8">[✓] Missing (Old Device)</text>
+        <text x="210" y="174" fill="#64748b">:</text>
+        <text x="225" y="174" fill="#64748b">0</text>
+        <text x="246" y="174" fill="#64748b" font-size="11">(None)</text>
+
+        <!-- Extra -->
+        <text x="0" y="196" fill="#94a3b8">[✓] Extra (New Device)</text>
+        <text x="210" y="196" fill="#64748b">:</text>
+        <text x="225" y="196" fill="#64748b">0</text>
+        <text x="246" y="196" fill="#64748b" font-size="11">(None)</text>
+      </g>
+
+      <!-- Success Result Banner Pill Inside Terminal -->
+      <g transform="translate(0, 218)">
+        <rect x="0" y="0" width="432" height="34" rx="8" fill="url(#successGrad)" stroke="#10b981" stroke-width="1.2"/>
+        <circle cx="18" cy="17" r="4.5" fill="#6ee7b7" filter="url(#glowEffect)"/>
+        <text x="32" y="22" fill="#ecfdf5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="800" letter-spacing="0.5">
+          OVERALL STATUS : 100% BIT-FOR-BIT IDENTICAL
+        </text>
+      </g>
+
+    </g>
+  </g>
+</svg>

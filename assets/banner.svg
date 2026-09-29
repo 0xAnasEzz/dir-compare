@@ -37,7 +37,7 @@
             font-size="44"
             font-weight="800"
             fill="#f0f6fc"
-            letter-spacing="-1">dir-compare</text>
+            letter-spacing="-1">remote-dir-compare</text>
     </g>
 
     <!-- Subtitle -->
@@ -103,7 +103,7 @@
 
     <!-- Window Title -->
     <text x="294" y="21" fill="#8b949e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11.5" font-weight="500" text-anchor="middle">
-      bash — dir-compare workflow
+      bash — remote-dir-compare workflow
     </text>
 
     <!-- Terminal Content (Real, Clean Developer CLI Session) -->
@@ -114,7 +114,7 @@
 
       <text x="0" y="32">
         <tspan fill="#58a6ff" font-weight="700">$</tspan>
-        <tspan fill="#f0f6fc"> dir-compare hash /sdcard/DCIM</tspan>
+        <tspan fill="#f0f6fc"> remote-dir-compare hash /sdcard/DCIM</tspan>
       </text>
 
       <text x="0" y="52" fill="#8b949e">
@@ -132,7 +132,7 @@
 
       <text x="0" y="124">
         <tspan fill="#58a6ff" font-weight="700">$</tspan>
-        <tspan fill="#f0f6fc"> dir-compare verify /sdcard/DCIM DCIM.md5</tspan>
+        <tspan fill="#f0f6fc"> remote-dir-compare verify /sdcard/DCIM DCIM.md5</tspan>
       </text>
 
       <!-- Divider Line -->

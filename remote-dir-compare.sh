@@ -70,26 +70,26 @@ show_usage() {
     cat << EOF
 ${C_BOLD}Usage:${C_RESET}
   ${C_CYAN}1. Hashing Mode (Old Phone):${C_RESET}
-     dir-compare hash <directory> [output_file] [algorithm: md5|sha256]
-     dir-compare hash <dir1,dir2,dir3,...> [algorithm: md5|sha256]
-     dir-compare hash <path/{dir1,dir2,...}> [algorithm: md5|sha256]
+     remote-dir-compare hash <directory> [output_file] [algorithm: md5|sha256]
+     remote-dir-compare hash <dir1,dir2,dir3,...> [algorithm: md5|sha256]
+     remote-dir-compare hash <path/{dir1,dir2,...}> [algorithm: md5|sha256]
 
      ${C_BOLD}Examples:${C_RESET}
-       dir-compare hash /sdcard/DCIM
-       dir-compare hash Music,Downloads,Documents
-       dir-compare hash /sdcard/{Music,Download,Documents}
-       dir-compare hash Music,Downloads sha256
-       dir-compare hash /sdcard/{Music,Download} sha256
+       remote-dir-compare hash /sdcard/DCIM
+       remote-dir-compare hash Music,Downloads,Documents
+       remote-dir-compare hash /sdcard/{Music,Download,Documents}
+       remote-dir-compare hash Music,Downloads sha256
+       remote-dir-compare hash /sdcard/{Music,Download} sha256
 
   ${C_CYAN}2. Verification Mode (New Phone):${C_RESET}
-     dir-compare verify <directory> [hash_file]
-     dir-compare verify <dir1,dir2,dir3,...>
-     dir-compare verify <path/{dir1,dir2,...}>
+     remote-dir-compare verify <directory> [hash_file]
+     remote-dir-compare verify <dir1,dir2,dir3,...>
+     remote-dir-compare verify <path/{dir1,dir2,...}>
 
      ${C_BOLD}Examples:${C_RESET}
-       dir-compare verify /sdcard/DCIM
-       dir-compare verify Music,Downloads,Documents
-       dir-compare verify /sdcard/{Music,Download,Documents}
+       remote-dir-compare verify /sdcard/DCIM
+       remote-dir-compare verify Music,Downloads,Documents
+       remote-dir-compare verify /sdcard/{Music,Download,Documents}
 
 ${C_DIM}Note:
   • When multiple directories are specified (comma-separated or brace expansion), each directory
@@ -198,7 +198,7 @@ hash_single_dir() {
     file_count=$(grep -c -v '^#' "$out_file" 2>/dev/null || true)
 
     # Append metadata comment to hash file for verification reference
-    echo "# dir-compare-metadata: folders=$folder_count files=$file_count" >> "$out_file"
+    echo "# remote-dir-compare-metadata: folders=$folder_count files=$file_count" >> "$out_file"
 
     local end_time
     end_time=$(date +%s)
@@ -209,7 +209,7 @@ hash_single_dir() {
     # -------------------------------------------------------------------------
     echo ""
     echo -e "${C_BOLD}=================================================================${C_RESET}"
-    echo -e "                 ${C_CYAN}${C_BOLD}DIR-COMPARE: HASHING REPORT${C_RESET}"
+    echo -e "                 ${C_CYAN}${C_BOLD}REMOTE-DIR-COMPARE: HASHING REPORT${C_RESET}"
     echo -e "${C_BOLD}=================================================================${C_RESET}"
     echo -e "  ${C_BOLD}Target Directory :${C_RESET} $target_dir"
     echo -e "  ${C_BOLD}Output File      :${C_RESET} $out_file"
@@ -227,7 +227,7 @@ hash_single_dir() {
     echo -e "  1. Transfer the hash file to the new phone:"
     echo -e "     ${C_CYAN}$out_file${C_RESET}"
     echo -e "  2. In Termux on the new phone, run:"
-    echo -e "     ${C_CYAN}dir-compare verify \"$target_dir\" \"$out_file\"${C_RESET}"
+    echo -e "     ${C_CYAN}remote-dir-compare verify \"$target_dir\" \"$out_file\"${C_RESET}"
     echo -e "${C_BOLD}=================================================================${C_RESET}"
 
     # Set return state for multi-dir coordinator
@@ -248,7 +248,7 @@ run_hash() {
 
     if [ "$#" -lt 1 ]; then
         echo -e "${C_RED}Error: At least one target directory is required for hash mode.${C_RESET}" >&2
-        echo "Usage: dir-compare hash <dir1[,dir2,...] | path/{dir1,dir2,...}> [output_file] [algorithm: md5|sha256]"
+        echo "Usage: remote-dir-compare hash <dir1[,dir2,...] | path/{dir1,dir2,...}> [output_file] [algorithm: md5|sha256]"
         exit 1
     fi
 
@@ -488,7 +488,7 @@ verify_single_dir() {
 
     # 2. Extract original folders count from metadata comment or derive from file paths
     local orig_folders_count
-    orig_folders_count=$(grep -m1 '^# dir-compare-metadata:.*folders=' "$hash_file" 2>/dev/null | sed -E 's/.*folders=([0-9]+).*/\1/' || true)
+    orig_folders_count=$(grep -m1 '^# remote-dir-compare-metadata:.*folders=' "$hash_file" 2>/dev/null | sed -E 's/.*folders=([0-9]+).*/\1/' || true)
 
     if [ -z "$orig_folders_count" ]; then
         orig_folders_count=$(awk '{
@@ -587,7 +587,7 @@ verify_single_dir() {
     # -------------------------------------------------------------------------
     echo ""
     echo -e "${C_BOLD}=================================================================${C_RESET}"
-    echo -e "               ${C_CYAN}${C_BOLD}DIR-COMPARE: VERIFICATION REPORT${C_RESET}"
+    echo -e "               ${C_CYAN}${C_BOLD}REMOTE-DIR-COMPARE: VERIFICATION REPORT${C_RESET}"
     echo -e "${C_BOLD}=================================================================${C_RESET}"
     echo -e "  ${C_BOLD}Target Directory :${C_RESET} $target_dir"
     echo -e "  ${C_BOLD}Hash Manifest    :${C_RESET} $hash_file"
@@ -716,7 +716,7 @@ run_verify() {
 
     if [ "$#" -lt 1 ]; then
         echo -e "${C_RED}Error: At least one target directory is required for verify mode.${C_RESET}" >&2
-        echo "Usage: dir-compare verify <dir1[,dir2,...] | path/{dir1,dir2,...}> [hash_file]"
+        echo "Usage: remote-dir-compare verify <dir1[,dir2,...] | path/{dir1,dir2,...}> [hash_file]"
         exit 1
     fi
 

@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="dir-compare banner" width="100%">
+  <img src="assets/banner.svg" alt="remote-dir-compare banner" width="100%">
 </p>
 
-<h1 align="center">dir-compare</h1>
+<h1 align="center">remote-dir-compare</h1>
 
 <p align="center">
   <strong>Decoupled Directory Hashing &amp; Bit-for-Bit Integrity Verification</strong>
@@ -14,11 +14,11 @@
 
 <br>
 
-<img src="assets/logo.svg" align="right" width="135" alt="dir-compare logo">
+<img src="assets/logo.svg" align="right" width="135" alt="remote-dir-compare logo">
 
-**`dir-compare`** is a resilient, lightweight, dual-mode directory hashing and verification tool. Originally crafted to guarantee bit-for-bit integrity during **Android phone migrations**, it allows you to verify that thousands of photos, videos, music, and nested folders transfer completely across devices without missing, corrupted, or duplicate files.
+**`remote-dir-compare`** is a resilient, lightweight, dual-mode directory hashing and verification tool. Originally crafted to guarantee bit-for-bit integrity during **Android phone migrations**, it allows you to verify that thousands of photos, videos, music, and nested folders transfer completely across devices without missing, corrupted, or duplicate files.
 
-Traditional comparison tools like `diff -r` require mounting both filesystems side-by-side. `dir-compare` **decouples the process**: create a portable checksum manifest on the source device, transfer the small manifest file, and verify it on the target device with a detailed integrity audit.
+Traditional comparison tools like `diff -r` require mounting both filesystems side-by-side. `remote-dir-compare` **decouples the process**: create a portable checksum manifest on the source device, transfer the small manifest file, and verify it on the target device with a detailed integrity audit.
 
 <br clear="right"/>
 
@@ -69,14 +69,14 @@ Traditional comparison tools like `diff -r` require mounting both filesystems si
 ```mermaid
 flowchart LR
     subgraph Source["Old Device (Source)"]
-        A[Target Directory] --> B["dir-compare hash"]
+        A[Target Directory] --> B["remote-dir-compare hash"]
         B --> C[Manifest File: folder.md5]
     end
 
     C -. Transfer File .-> D
 
     subgraph Destination["New Device (Target)"]
-        D[Manifest File: folder.md5] --> F["dir-compare verify"]
+        D[Manifest File: folder.md5] --> F["remote-dir-compare verify"]
         E[Migrated Directory] --> F
         F --> G[Comprehensive Audit Report]
     end
@@ -86,7 +86,7 @@ flowchart LR
 
 ## Requirements
 
-`dir-compare` is a pure Bash script with standard POSIX / Coreutils dependencies:
+`remote-dir-compare` is a pure Bash script with standard POSIX / Coreutils dependencies:
 
 - **Bash** (`bash` 4.0+)
 - **Coreutils** (`md5sum` or `sha256sum`, `comm`, `sort`, `awk`, `date`, `wc`, `realpath`)
@@ -102,15 +102,15 @@ These utilities come pre-installed on virtually all Linux distributions, macOS (
 
 ```bash
 # Clone the repository
-git clone https://github.com/0xAnasEzz/dir-compare.git
-cd dir-compare
+git clone https://github.com/0xAnasEzz/remote-dir-compare.git
+cd remote-dir-compare
 
 # Make executable
-chmod +x dir-compare.sh
+chmod +x remote-dir-compare.sh
 
 # Optional: Link to your user binary path
 mkdir -p ~/.local/bin
-ln -s "$(pwd)/dir-compare.sh" ~/.local/bin/dir-compare
+ln -s "$(pwd)/remote-dir-compare.sh" ~/.local/bin/remote-dir-compare
 ```
 
 ### Android (Termux)
@@ -123,10 +123,10 @@ ln -s "$(pwd)/dir-compare.sh" ~/.local/bin/dir-compare
    ```
 3. Clone and install:
    ```bash
-   git clone https://github.com/0xAnasEzz/dir-compare.git
-   cd dir-compare
-   chmod +x dir-compare.sh
-   ln -s "$(pwd)/dir-compare.sh" "$PREFIX/bin/dir-compare"
+   git clone https://github.com/0xAnasEzz/remote-dir-compare.git
+   cd remote-dir-compare
+   chmod +x remote-dir-compare.sh
+   ln -s "$(pwd)/remote-dir-compare.sh" "$PREFIX/bin/remote-dir-compare"
    ```
 
 ---
@@ -135,12 +135,12 @@ ln -s "$(pwd)/dir-compare.sh" ~/.local/bin/dir-compare
 
 ```bash
 # 1. On source machine / old phone: hash a directory
-dir-compare hash /sdcard/DCIM
+remote-dir-compare hash /sdcard/DCIM
 
 # -> Manifest generated at ./dir-hashes/DCIM.md5
 
 # 2. Transfer DCIM.md5 to new machine / new phone and run:
-dir-compare verify /sdcard/DCIM ./dir-hashes/DCIM.md5
+remote-dir-compare verify /sdcard/DCIM ./dir-hashes/DCIM.md5
 ```
 
 ---
@@ -150,14 +150,14 @@ dir-compare verify /sdcard/DCIM ./dir-hashes/DCIM.md5
 ```text
 Usage:
   1. Hashing Mode (Old Phone):
-     dir-compare hash <directory> [output_file] [algorithm: md5|sha256]
-     dir-compare hash <dir1,dir2,dir3,...> [algorithm: md5|sha256]
-     dir-compare hash <path/{dir1,dir2,...}> [algorithm: md5|sha256]
+     remote-dir-compare hash <directory> [output_file] [algorithm: md5|sha256]
+     remote-dir-compare hash <dir1,dir2,dir3,...> [algorithm: md5|sha256]
+     remote-dir-compare hash <path/{dir1,dir2,...}> [algorithm: md5|sha256]
 
   2. Verification Mode (New Phone):
-     dir-compare verify <directory> [hash_file]
-     dir-compare verify <dir1,dir2,dir3,...>
-     dir-compare verify <path/{dir1,dir2,...}>
+     remote-dir-compare verify <directory> [hash_file]
+     remote-dir-compare verify <dir1,dir2,dir3,...>
+     remote-dir-compare verify <path/{dir1,dir2,...}>
 ```
 
 ### 1. Hashing Mode (Source Device)
@@ -166,16 +166,16 @@ Generate a manifest of relative paths and deterministic file checksums:
 
 ```bash
 # Default: creates ./dir-hashes/DCIM.md5 using MD5
-dir-compare hash /sdcard/DCIM
+remote-dir-compare hash /sdcard/DCIM
 
 # Use SHA-256 instead of MD5
-dir-compare hash /sdcard/DCIM sha256
+remote-dir-compare hash /sdcard/DCIM sha256
 
 # Specify custom output path
-dir-compare hash /sdcard/DCIM /sdcard/Download/dcim_backup.sha256 sha256
+remote-dir-compare hash /sdcard/DCIM /sdcard/Download/dcim_backup.sha256 sha256
 ```
 
-> **Tip**: If no mode keyword (`hash` or `verify`) is provided, `dir-compare` defaults to `hash` mode when the argument is a directory.
+> **Tip**: If no mode keyword (`hash` or `verify`) is provided, `remote-dir-compare` defaults to `hash` mode when the argument is a directory.
 
 ### 2. Verification Mode (Target Device)
 
@@ -183,10 +183,10 @@ Compare the files on disk against an existing manifest:
 
 ```bash
 # Auto-resolves manifest from ./dir-hashes/DCIM.md5 (or .sha256)
-dir-compare verify /sdcard/DCIM
+remote-dir-compare verify /sdcard/DCIM
 
 # Specify explicit manifest file
-dir-compare verify /sdcard/DCIM /path/to/my_custom_manifest.md5
+remote-dir-compare verify /sdcard/DCIM /path/to/my_custom_manifest.md5
 ```
 
 The algorithm is auto-detected from the signatures in the manifest.
@@ -198,28 +198,28 @@ Process multiple directories in a single command using comma-separated syntax or
 #### Comma-Separated Syntax
 ```bash
 # Hash multiple directories
-dir-compare hash Music,Download,Documents
+remote-dir-compare hash Music,Download,Documents
 
 # Hash with SHA-256
-dir-compare hash Music,Download,Documents sha256
+remote-dir-compare hash Music,Download,Documents sha256
 
 # Verify multiple directories
-dir-compare verify Music,Download,Documents
+remote-dir-compare verify Music,Download,Documents
 ```
 
 #### Bash Brace Expansion
 ```bash
 # Hash multiple directories using shell brace expansion
-dir-compare hash /sdcard/{DCIM,Music,Download,Documents}
+remote-dir-compare hash /sdcard/{DCIM,Music,Download,Documents}
 
 # Hash with SHA-256
-dir-compare hash /sdcard/{DCIM,Music,Download,Documents} sha256
+remote-dir-compare hash /sdcard/{DCIM,Music,Download,Documents} sha256
 
 # Verify multiple directories
-dir-compare verify /sdcard/{DCIM,Music,Download,Documents}
+remote-dir-compare verify /sdcard/{DCIM,Music,Download,Documents}
 ```
 
-When batching, `dir-compare` prints an execution progress banner for each folder and concludes with a consolidated **Multi-Directory Summary Table**.
+When batching, `remote-dir-compare` prints an execution progress banner for each folder and concludes with a consolidated **Multi-Directory Summary Table**.
 
 ---
 
@@ -231,7 +231,7 @@ Here is the recommended real-world workflow for transferring data between two An
 In Termux on your old phone:
 ```bash
 cd ~
-dir-compare hash /sdcard/{DCIM,Music,Pictures,Documents,Download}
+remote-dir-compare hash /sdcard/{DCIM,Music,Pictures,Documents,Download}
 ```
 All manifest files will be stored in `~/dir-hashes/`.
 
@@ -244,18 +244,18 @@ In Termux on your new phone:
 ```bash
 cd ~
 # Place the transferred dir-hashes directory in your home folder (~/dir-hashes)
-dir-compare verify /sdcard/{DCIM,Music,Pictures,Documents,Download}
+remote-dir-compare verify /sdcard/{DCIM,Music,Pictures,Documents,Download}
 ```
 
 ---
 
 ## Sample Verification Report
 
-When verification runs, `dir-compare` provides a clean, detailed report:
+When verification runs, `remote-dir-compare` provides a clean, detailed report:
 
 ```text
 =================================================================
-               DIR-COMPARE: VERIFICATION REPORT
+               REMOTE-DIR-COMPARE: VERIFICATION REPORT
 =================================================================
   Target Directory : /sdcard/DCIM
   Hash Manifest    : /data/data/com.termux/files/home/dir-hashes/DCIM.md5
@@ -297,7 +297,7 @@ If issues are found, the offending files are listed explicitly under their respe
 
 ## Exit Codes
 
-`dir-compare` returns standard shell exit codes for CI/CD or automation scripting:
+`remote-dir-compare` returns standard shell exit codes for CI/CD or automation scripting:
 
 | Exit Code | Meaning |
 |:---------:|---------|
@@ -309,8 +309,8 @@ If issues are found, the offending files are listed explicitly under their respe
 ## Architecture & Design Details
 
 - **Deterministic Sorts**: Checksum lines are generated using `LC_ALL=C find ... | sort -z`. This prevents locale-dependent collation discrepancies across different operating systems, BusyBox versions, or Android ROM distributions.
-- **Relational Set Operations with `comm`**: Rather than solely relying on `md5sum -c` (which only checks files declared in the manifest), `dir-compare` conducts high-speed set operations with `comm` to cross-examine source and target trees. This enables instantaneous discovery of deleted/missing files as well as newly introduced unlisted files.
-- **Metadata Headers**: Generated manifests embed a comment header (`# dir-compare-metadata: folders=... files=...`) used by the verification engine to cross-validate total folder counts.
+- **Relational Set Operations with `comm`**: Rather than solely relying on `md5sum -c` (which only checks files declared in the manifest), `remote-dir-compare` conducts high-speed set operations with `comm` to cross-examine source and target trees. This enables instantaneous discovery of deleted/missing files as well as newly introduced unlisted files.
+- **Metadata Headers**: Generated manifests embed a comment header (`# remote-dir-compare-metadata: folders=... files=...`) used by the verification engine to cross-validate total folder counts.
 
 ---
 
